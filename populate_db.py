@@ -24,9 +24,15 @@ def main():
     # clear db
     # load documents
     doc = load_documents()
+
+    if len(doc) == 0:
+        quit()
+    
     # split documents
     chunks = split_documents(doc)
-    # add chunks to chroma
+    
+    # add chunks to chroma (vector DB)
+    
     print("test")
     return
 
@@ -41,6 +47,8 @@ def load_documents():
 
 # since documents are massive, we need to split the data in chunks
 def split_documents(documents: list[Document]):
+
+
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=150,
         chunk_overlap=20,
@@ -58,6 +66,30 @@ def split_documents(documents: list[Document]):
 
     return chunks
 
+
+def calculate_chunk_ids(chunks):
+    # this will creat IDs such as "dataset/Report Number 1 Fake Company.docx"
+    # Page Source : Page Number : Chunk Index
+    latest_page = None
+    current_chunk = 0
+
+    for chunk in chunks:
+        source = chunk.metadata.get("source")
+        page = chunk.metadata.get("page")
+        current_page = f"{source}:{page}"
+
+        # If the page ID is the same as the last one, increment the index
+        if current_page == latest_page:
+            current_chunk += 1
+        else:
+            current_chunk = 0
+        
+        # Calculate the chunk ID
+        chunk_id = f"{current_page}:{current_chunk}"
+        latest_page = current_page
+
+
+    return chunks
 # After loading the doucments and splitting them into chunks, place it into a vector DB
 
 
