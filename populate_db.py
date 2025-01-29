@@ -90,6 +90,8 @@ def calculate_chunk_ids(chunks):
 
 
     return chunks
+
+
 # After loading the doucments and splitting them into chunks, place it into a vector DB
 
 
