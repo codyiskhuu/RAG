@@ -18,18 +18,19 @@ from langchain_community.vectorstores import Chroma
 # nltk.download('punkt_tab')
 # nltk.download('averaged_perceptron_tagger_eng')
 DATA_PATH = "dataset"
+FILE_PATH = "dataset/ADV.xlsx"
 
 
 def main():
     # clear db
     # load documents
     doc = load_documents()
-
+    print(doc)
     if len(doc) == 0:
         quit()
     
     # split documents
-    chunks = split_documents(doc)
+    # chunks = split_documents(doc)
     
     # add chunks to chroma (vector DB)
     
@@ -40,10 +41,41 @@ def main():
 # this loads currently data from a markdown file
 # before loading this data we need to split it
 def load_documents():
-    loader = DirectoryLoader(DATA_PATH, glob="*.docx")
-    documents = loader.load()
+    # I should load and split this excel sheet in order these items row by row
+    # random question: should I append the column name? (might give more context)
+    df = pd.read_excel(FILE_PATH)
+    print(df)
+    # for index, row in df.iterrows():
+        # get column name + row details 
+        # Form Name	+ Section +	Subsection + Question + Answer Type + Expected Data Element + Business Definition
+        # print(row["Form Name"])
+        # In the Form (Form Name) in Section (Section) Subsection (Subsection), the question is (Question). The expected Answer Type would be (Answer Type), the Expected Data Element would be (Data Element) and the business Defintion is (Business Definition).
+        # line = "In the " + row["Form Name"]  + " in Section " + str(row["Section"]) + " Subsection " + str(row["Subsection"]) + ", the question is " + row["Question"]  + ". The expected Answer Type would be " + str(row["Answer Type"]) + ", the Expected Data Element would be " + str(row["Expected Data Element"]) + " and the business definition is " + str(row["Business Definition"]) + " "
+        # documents.append(line)
+        # print(documents)
+
+    embedding_model = get_embedding_function()
+    embeddings = []
+    for index, row in df.iterrows():
+        document = Document(
+            page_content=row['Question'],
+            meta_data ={'Section':'Section', 'Subsection':'Subsection'},
+            id=str(index)
+        )
+
+        try:
+            embedding = embedding_model.embed_documents([document.page_content])[0]
+
+        except Exception as e:
+            print(f"Failed to embed document: {e}")
+    
+
+
+
+    # loader = DirectoryLoader(DATA_PATH, glob="*.xlsx")
+    # documents = loader.load()
     # documents are just metadata that intakes the entire file
-    return documents
+    return df
 
 # since documents are massive, we need to split the data in chunks
 def split_documents(documents: list[Document]):
@@ -59,10 +91,10 @@ def split_documents(documents: list[Document]):
     # split the text into a list of chunks
     chunks = text_splitter.split_documents(documents)
     # how many chunks are in the document
-    print(f"split {len(documents)} documents into {len(chunks)} chunks.")
+    # print(f"split {len(documents)} documents into {len(chunks)} chunks.")
 
-    print(chunks[2].page_content)
-    print(chunks[2].metadata)
+    # print(chunks[2].page_content)
+    # print(chunks[2].metadata)
 
     return chunks
 
