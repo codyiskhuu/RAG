@@ -11,7 +11,7 @@ from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
 from get_embedding_function import get_embedding_function
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 
 # import nltk
@@ -19,65 +19,81 @@ from langchain_community.vectorstores import Chroma
 # nltk.download('averaged_perceptron_tagger_eng')
 DATA_PATH = "dataset"
 FILE_PATH = "dataset/ADV.xlsx"
+CHROMA_PATH = "chroma"
+vector_db = Chroma(collection_name="ADV_File")
 
 
 def main():
     # clear db
-    # load documents
-    doc = load_documents()
+    doc = load_excel_doc()
     print(doc)
-    if len(doc) == 0:
-        quit()
-    
-    # split documents
-    # chunks = split_documents(doc)
-    
-    # add chunks to chroma (vector DB)
-    
+    documents = toChunks(doc)
+    print(documents)
+
+
     print("test")
     return
 
+def load_excel():
+    docs =[]
+    df = pd.read_excel(FILE_PATH)
+    df = df.fillna("")
+
+    return df
+
+def toChunks(doc):
+    chunks = []
+    for i, row in doc.iterrows():
+        row_text = "\n".join([f"{col}: {row[col]}" for col in doc.columns])
+        chunks.append(row_text)
+    return chunks
 
 # this loads currently data from a markdown file
 # before loading this data we need to split it
-def load_documents():
-    # I should load and split this excel sheet in order these items row by row
-    # random question: should I append the column name? (might give more context)
+def load_excel_doc():    
     df = pd.read_excel(FILE_PATH)
-    print(df)
-    # for index, row in df.iterrows():
-        # get column name + row details 
-        # Form Name	+ Section +	Subsection + Question + Answer Type + Expected Data Element + Business Definition
-        # print(row["Form Name"])
-        # In the Form (Form Name) in Section (Section) Subsection (Subsection), the question is (Question). The expected Answer Type would be (Answer Type), the Expected Data Element would be (Data Element) and the business Defintion is (Business Definition).
-        # line = "In the " + row["Form Name"]  + " in Section " + str(row["Section"]) + " Subsection " + str(row["Subsection"]) + ", the question is " + row["Question"]  + ". The expected Answer Type would be " + str(row["Answer Type"]) + ", the Expected Data Element would be " + str(row["Expected Data Element"]) + " and the business definition is " + str(row["Business Definition"]) + " "
-        # documents.append(line)
-        # print(documents)
+    # print(df)
 
-    embedding_model = get_embedding_function()
-    embeddings = []
+    docs = []
     for index, row in df.iterrows():
         document = Document(
             page_content=row['Question'],
-            meta_data ={'Section':'Section', 'Subsection':'Subsection'},
+            meta_data ={'Section':'Section', 'Subsection':'Subsection', 'id':index},
             id=str(index)
         )
+        
+        docs.append(document)
 
-        try:
-            embedding = embedding_model.embed_documents([document.page_content])[0]
+    return docs
 
-        except Exception as e:
-            print(f"Failed to embed document: {e}")
-    
+def add_to_chroma(chunks: list[Document]):
+    # Load the existing database
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=get_embedding_function())
 
+    # Calculate Page IDs.
+    chunks_with_ids = calculate_chunk_ids(chunks)
 
+    # Add or Update the documents.
+    existing_items = db.get(include=[])  # IDs are always included by default
+    existing_ids = set(existing_items["ids"])
+    print(f"Number of existing documents in DB: {len(existing_ids)}")
 
-    # loader = DirectoryLoader(DATA_PATH, glob="*.xlsx")
-    # documents = loader.load()
-    # documents are just metadata that intakes the entire file
-    return df
+    # Only add documents that don't exist in the DB.
+    new_chunks = []
+    for chunk in chunks_with_ids:
+        if chunk.metadata["id"] not in existing_ids:
+            new_chunks.append(chunk)
 
-# since documents are massive, we need to split the data in chunks
+    if len(new_chunks):
+        print(f"Adding new documents: {len(new_chunks)}")
+        new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
+        db.add_documents(new_chunks, ids=new_chunk_ids)
+
+    else:
+        print("No new documents to add")
+    return 
+
+# FOR PDF - since documents are massive, we need to split the data in chunks
 def split_documents(documents: list[Document]):
 
 
@@ -127,10 +143,9 @@ def calculate_chunk_ids(chunks):
 # After loading the doucments and splitting them into chunks, place it into a vector DB
 
 
-
-
-# st.write("Test Page")
-
+def clear_database():
+    if os.path.exists(CHROMA_PATH):
+        shutil.rmtree(CHROMA_PATH)
 
 if __name__ == "__main__":
     main()
