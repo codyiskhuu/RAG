@@ -24,14 +24,16 @@ vector_db = Chroma(collection_name="ADV_File")
 
 
 def main():
-    # clear db
-    doc = load_excel_doc()
-    print(doc)
+    # load excel
+    doc = load_excel()
+    # print(doc["Form Name"][0])
+
+    # load each row into document chunks
     documents = toChunks(doc)
-    print(documents)
 
+    add_to_chroma(documents)
 
-    print("test")
+    print("tester")
     return
 
 def load_excel():
@@ -45,7 +47,24 @@ def toChunks(doc):
     chunks = []
     for i, row in doc.iterrows():
         row_text = "\n".join([f"{col}: {row[col]}" for col in doc.columns])
-        chunks.append(row_text)
+        
+        
+        metadatas = {
+            "id": str(i),
+            "page" : i,
+            "source" : "excel"
+        }
+
+        chunk = Document(
+            page_content = row_text,
+            metadata = metadatas
+        )
+        chunks.append(chunk)
+        # chunks.append(row_text)
+        # print(i)
+        # print(row_text)
+
+
     return chunks
 
 # this loads currently data from a markdown file
@@ -84,6 +103,7 @@ def add_to_chroma(chunks: list[Document]):
         if chunk.metadata["id"] not in existing_ids:
             new_chunks.append(chunk)
 
+
     if len(new_chunks):
         print(f"Adding new documents: {len(new_chunks)}")
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
@@ -106,22 +126,18 @@ def split_documents(documents: list[Document]):
 
     # split the text into a list of chunks
     chunks = text_splitter.split_documents(documents)
-    # how many chunks are in the document
-    # print(f"split {len(documents)} documents into {len(chunks)} chunks.")
-
-    # print(chunks[2].page_content)
-    # print(chunks[2].metadata)
-
     return chunks
 
 
 def calculate_chunk_ids(chunks):
-    # this will creat IDs such as "dataset/Report Number 1 Fake Company.docx"
+    # this will create IDs such as "dataset/Report Number 1 Fake Company.docx"
     # Page Source : Page Number : Chunk Index
     latest_page = None
     current_chunk = 0
 
     for chunk in chunks:
+        print("chunk")
+
         source = chunk.metadata.get("source")
         page = chunk.metadata.get("page")
         current_page = f"{source}:{page}"
