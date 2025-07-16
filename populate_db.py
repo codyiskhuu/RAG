@@ -18,7 +18,8 @@ from langchain_chroma import Chroma
 # nltk.download('punkt_tab')
 # nltk.download('averaged_perceptron_tagger_eng')
 DATA_PATH = "dataset"
-FILE_PATH = "dataset/ADV.xlsx"
+# FILE_PATH = "dataset/ADV.xlsx"
+FILE_PATH = "dataset/NCEN_Answers.xlsx"
 CHROMA_PATH = "chroma"
 vector_db = Chroma(collection_name="ADV_File")
 
@@ -26,7 +27,6 @@ vector_db = Chroma(collection_name="ADV_File")
 def main():
     # load excel
     doc = load_excel()
-    # print(doc["Form Name"][0])
 
     # load each row into document chunks
     documents = toChunks(doc)
@@ -49,8 +49,8 @@ def toChunks(doc):
         
 
         row_text = "\n".join([f"{col}: {row[col]}" for col in doc.columns])
-        print(row_text)
-        print(i)
+        # print(row_text)
+        # print(i)
         metadatas = {
             "id": str(i+1),
             "page" : i+1,
@@ -71,27 +71,27 @@ def toChunks(doc):
 
 # this loads currently data from a markdown file
 # before loading this data we need to split it
-def load_excel_doc():    
-    df = pd.read_excel(FILE_PATH)
-    # print(df)
+# def load_excel_doc():    
+#     df = pd.read_excel(FILE_PATH)
+#     # print(df)
 
-    docs = []
-    for index, row in df.iterrows():
-        document = Document(
-            page_content=row['Question'],
-            meta_data ={'Section':'Section', 'Subsection':'Subsection', 'id':index},
-            id=str(index)
-        )
+#     docs = []
+#     for index, row in df.iterrows():
+#         document = Document(
+#             page_content=row['Question'],
+#             meta_data ={'Section':'Section', 'Subsection':'Subsection', 'id':index},
+#             id=str(index)
+#         )
         
-        docs.append(document)
+#         docs.append(document)
 
-    return docs
+#     return docs
 
 def add_to_chroma(chunks: list[Document]):
     # Load the existing database
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=get_embedding_function())
 
-    # Calculate Page IDs.
+    # Calculate Page IDs
     chunks_with_ids = calculate_chunk_ids(chunks)
 
     # Add or Update the documents.
@@ -138,7 +138,7 @@ def calculate_chunk_ids(chunks):
     current_chunk = 0
 
     for chunk in chunks:
-        print("chunk")
+        # print("chunk")
 
         source = chunk.metadata.get("source")
         page = chunk.metadata.get("page")
