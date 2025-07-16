@@ -46,12 +46,14 @@ def load_excel():
 def toChunks(doc):
     chunks = []
     for i, row in doc.iterrows():
+        
+
         row_text = "\n".join([f"{col}: {row[col]}" for col in doc.columns])
-        
-        
+        print(row_text)
+        print(i)
         metadatas = {
-            "id": str(i),
-            "page" : i,
+            "id": str(i+1),
+            "page" : i+1,
             "source" : "excel"
         }
 
@@ -114,19 +116,19 @@ def add_to_chroma(chunks: list[Document]):
     return 
 
 # FOR PDF - since documents are massive, we need to split the data in chunks
-def split_documents(documents: list[Document]):
+# def split_documents(documents: list[Document]):
 
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=150,
-        chunk_overlap=20,
-        length_function=len,
-        is_separator_regex=False,
-    )
+#     text_splitter = RecursiveCharacterTextSplitter(
+#         chunk_size=150,
+#         chunk_overlap=20,
+#         length_function=len,
+#         is_separator_regex=False,
+#     )
 
-    # split the text into a list of chunks
-    chunks = text_splitter.split_documents(documents)
-    return chunks
+#     # split the text into a list of chunks
+#     chunks = text_splitter.split_documents(documents)
+#     return chunks
 
 
 def calculate_chunk_ids(chunks):
