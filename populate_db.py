@@ -18,8 +18,8 @@ from langchain_chroma import Chroma
 # nltk.download('punkt_tab')
 # nltk.download('averaged_perceptron_tagger_eng')
 DATA_PATH = "dataset"
-# FILE_PATH = "dataset/ADV.xlsx"
-FILE_PATH = "dataset/NCEN_Answers.xlsx"
+FILE_PATH = "dataset/ADV.xlsx"
+# FILE_PATH = "dataset/NCEN_Answers.xlsx"
 CHROMA_PATH = "chroma"
 vector_db = Chroma(collection_name="ADV_File")
 
