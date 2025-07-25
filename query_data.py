@@ -44,6 +44,59 @@ Based off of the above context, answer the question from section {section} {ques
 
 
 def main():
+    st.set_page_config(page_title="Chat with AI", page_icon="🤖")
+    st.title("🤖 Chat with AI")
+    
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "step" not in st.session_state:
+        st.session_state.step = "ask_q"   
+    if "first_q" not in st.session_state:
+        st.session_state.first_q = ""
+
+
+    # Display all previous messages
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Chat input box
+    prompt = st.chat_input("Ask me anything...", key="chat_q")
+
+    if prompt:
+        if st.session_state.step == "ask_q":
+            st.session_state.step_2 = prompt
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            with st.chat_message("assistant"):
+                msg = "From which section?"
+                st.markdown(msg)
+                st.session_state.messages.append({"role": "assistant", "content": msg})    
+
+            st.session_state.step  = "ask_section"
+
+        # section + AI 
+        elif st.session_state.step == "ask_section":
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    prompts, response = query_rag(st.session_state.step_2,prompt)   # Replace with AI agent call
+                    st.markdown(prompts)
+                    
+            st.session_state.messages.append({"role": "assistant", "content": prompts})
+
+            with st.chat_message("assistant"):
+                st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            
+            st.session_state.step = "ask_q"
 
     # parser = argparse.ArgumentParser()
     # parser.add_argument("query_text", type=str, help="The query text.")
@@ -88,7 +141,7 @@ def query_rag(query_text: str, section_text: str):
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
     # print(formatted_response)
-    return response_text
+    return prompt, response_text
 
 
 if __name__ == "__main__":
