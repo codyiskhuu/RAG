@@ -1,3 +1,4 @@
+import streamlit as st
 import argparse
 from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
@@ -48,16 +49,20 @@ def main():
     # parser.add_argument("query_text", type=str, help="The query text.")
     # args = parser.parse_args()
     # query_text = args.query_text
-    df = pd.read_excel(Q_PATH)
+    # df = pd.read_excel(Q_PATH)
 
-    for i, row in df.iterrows():
-        query_text = row["Question"]
-        section_text = row["Section"]
+    # df["Answer"] = ""
 
-        # print(query_text)
-        query_rag(query_text,section_text)
-        break
+    # for i, row in df.iterrows():
+    #     query_text = row["Question"]
+    #     section_text = row["Section"]
 
+    #     # print(query_text)
+    #     answer = query_rag(query_text, section_text)
+    #     row["Answer"] = answer
+
+    # df.to_excel("output/answer.xlsx", sheet_name="NCEN", index=False)
+        
     return
 
 def query_rag(query_text: str, section_text: str):
@@ -71,9 +76,9 @@ def query_rag(query_text: str, section_text: str):
     # Prepare prompt - Context Text = results but seperated.
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     # Pull the prompt tempalte + add context + question.
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+    prompt_template = ChatPromptTemplate.from_template(FORM_TEMPLATE)
     prompt = prompt_template.format(context=context_text, question=query_text, section=section_text)
-    print(prompt)
+    # print(prompt)
 
     # Pull model + ask model prompt.
     model = OllamaLLM(model="mistral")
@@ -82,7 +87,7 @@ def query_rag(query_text: str, section_text: str):
     # Prepare formatted response.
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
-    print(formatted_response)
+    # print(formatted_response)
     return response_text
 
 
