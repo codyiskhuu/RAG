@@ -37,10 +37,10 @@ Answer the SEC Question based only on the following context:
 
 ---
 
-Based off of the above context, answer the question from section {section} {question}
+Based off of the above context, answer the question: {question}
 
 """
-
+#  from section {section}
 
 
 def main():
@@ -73,31 +73,38 @@ def main():
                 st.markdown(prompt)
             
             with st.chat_message("assistant"):
-                msg = "From which section?"
-                st.markdown(msg)
-                st.session_state.messages.append({"role": "assistant", "content": msg})    
-
-            st.session_state.step  = "ask_section"
+                # msg = "From which section?"
+                # st.markdown(msg)
+                with st.spinner("Thinking..."):
+                    msg = query_rag(prompt, "test")
+                    st.markdown(msg)
+                    
+                    
+            st.session_state.messages.append({"role": "assistant", "content": msg})    
+            
+            st.session_state.step  = "ask_q"
 
         # section + AI 
-        elif st.session_state.step == "ask_section":
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
+        # elif st.session_state.step == "ask_section":
+        #     st.session_state.messages.append({"role": "user", "content": prompt})
+        #     with st.chat_message("user"):
+        #         st.markdown(prompt)
             
-            with st.chat_message("assistant"):
-                with st.spinner("Thinking..."):
-                    prompts, response = query_rag(st.session_state.step_2,prompt)   # Replace with AI agent call
-                    st.markdown(prompts)
+        #     with st.chat_message("assistant"):
+        #         with st.spinner("Thinking..."):
+        #             prompts, response = query_rag(st.session_state.step_2,prompt)   # Replace with AI agent call
+        #             st.markdown(prompts)
                     
-            st.session_state.messages.append({"role": "assistant", "content": prompts})
+        #     st.session_state.messages.append({"role": "assistant", "content": prompts})
 
-            with st.chat_message("assistant"):
-                st.markdown(response)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+        #     with st.chat_message("assistant"):
+        #         st.markdown(response)
+        #     st.session_state.messages.append({"role": "assistant", "content": response})
             
-            st.session_state.step = "ask_q"
+        #     st.session_state.step = "ask_q"
 
+
+    # Terminal intake commands
     # parser = argparse.ArgumentParser()
     # parser.add_argument("query_text", type=str, help="The query text.")
     # args = parser.parse_args()
@@ -130,8 +137,9 @@ def query_rag(query_text: str, section_text: str):
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     # Pull the prompt tempalte + add context + question.
     prompt_template = ChatPromptTemplate.from_template(FORM_TEMPLATE)
-    prompt = prompt_template.format(context=context_text, question=query_text, section=section_text)
-    # print(prompt)
+    # prompt = prompt_template.format(context=context_text, question=query_text, section=section_text)
+    prompt = prompt_template.format(context=context_text, question=query_text)    
+    print(prompt)
 
     # Pull model + ask model prompt.
     model = OllamaLLM(model="mistral")
@@ -140,8 +148,8 @@ def query_rag(query_text: str, section_text: str):
     # Prepare formatted response.
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
-    # print(formatted_response)
-    return prompt, response_text
+    print(formatted_response)
+    return response_text
 
 
 if __name__ == "__main__":
