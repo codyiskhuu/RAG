@@ -116,9 +116,7 @@ def main():
         time.sleep(1.5)
         end = time.time()
         print(f"Execution time: {end - start:.4f} seconds")
-        if i == 100:
-            
-            break
+
         
     print(df["Answer"])
 
@@ -132,7 +130,7 @@ def query_rag(query_text: str, section_text: str):
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
     # Search the DB and pulls k lines of context -> document variable: ID, metadata, page_content.
-    results = db.similarity_search_with_score(str(query_text + " " + section_text), k=3)
+    results = db.similarity_search_with_score(str(query_text + " from section: " + section_text), k=3)
 
     # Prepare prompt - Context Text = results but seperated.
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
