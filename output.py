@@ -39,7 +39,9 @@ Answer the SEC Question based only on the following context:
 
 ---
 
-Based off of the above context, answer the question: {question}
+Based off of the above context, answer the question: {question} from section {section}
+
+Instructions: Provide an only the answer, no other words, and use only the provided context to answer the question.
 
 """
 #  from section {section}
@@ -107,14 +109,20 @@ def main():
 
         # print(query_text)
         answer, context= query_rag(query_text, section_text)
-        row["Answer"] = answer
-        row["Context"] = context
+        # row["Answer"] = answer
+        # row["Context"] = context
+        df.at[i, "Answer"] = answer.strip()
+        df.at[i, "Context"] = context.strip()
         time.sleep(1.5)
         end = time.time()
         print(f"Execution time: {end - start:.4f} seconds")
+        if i == 100:
+            
+            break
         
+    print(df["Answer"])
 
-    df.to_excel("output/answer.xlsx", sheet_name="NCEN", index=False)
+    df.to_excel("output/answer_v1.xlsx", sheet_name="NCEN", index=False)
         
     return
 
@@ -124,14 +132,14 @@ def query_rag(query_text: str, section_text: str):
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
     # Search the DB and pulls k lines of context -> document variable: ID, metadata, page_content.
-    results = db.similarity_search_with_score(query_text, k=3)
+    results = db.similarity_search_with_score(str(query_text + " " + section_text), k=3)
 
     # Prepare prompt - Context Text = results but seperated.
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     # Pull the prompt tempalte + add context + question.
     prompt_template = ChatPromptTemplate.from_template(FORM_TEMPLATE)
     # prompt = prompt_template.format(context=context_text, question=query_text, section=section_text)
-    prompt = prompt_template.format(context=context_text, question=query_text)    
+    prompt = prompt_template.format(context=context_text, question=query_text, section=section_text)    
     # print(prompt)
 
     # Pull model + ask model prompt.
@@ -141,6 +149,7 @@ def query_rag(query_text: str, section_text: str):
     # Prepare formatted response.
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
+    print(query_text)
     print(formatted_response)
     return response_text, context_text
 
