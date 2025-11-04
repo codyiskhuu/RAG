@@ -1,0 +1,1 @@
+Built a Retrieval-Augmented Generation (RAG) pipeline integrating Ollama Mistral with ChromaDB for semantic search and context retrieval. The system ingests prior-year form data to generate accurate draft responses for current-year forms, streamlining document completion and minimizing redundant work.
